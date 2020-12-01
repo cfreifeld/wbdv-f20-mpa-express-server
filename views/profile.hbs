@@ -1,0 +1,11 @@
+<h1>{{title}}</h1>
+<p>Welcome, {{user.username}}!</p>
+
+<script>
+  $.get('/api/users', (resp) => {
+    console.log(resp);
+    if (resp.status === 'Error') {
+      window.location = '/login';
+    }
+  })
+</script>
