@@ -120,7 +120,18 @@ app.get('/profile', restrictHtml, (req, res) => {
   res.render('profile', {title: 'Profile', user: req.session.user})
 })
 
+app.get('/assess', (req, res) => {
+  res.render('assess', {title: 'Patient Assessment'})
+})
 
+app.post('/api/assess', (req, res) => {
+  console.log(req.body)  // save to database after validation
+  //res.json({status: 'OK'})
+})
+
+app.get('/somedata', (req, res) => {
+  res.json({data: 'data'})
+})
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

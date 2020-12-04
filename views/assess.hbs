@@ -1,0 +1,105 @@
+<form id="assessment">
+  <div id="msg" class="alert alert-primary" style="display: none" role="alert"></div>
+  <div class="form-group">
+    <label for="patientId">Patient Identifier</label>
+    <input type="text" class="form-control" name="patientId" id="patientId"
+           placeholder="Patient ID">
+  </div>
+  Symptoms:
+  <div class="form-check">
+    <input class="form-check-input symptom" type="checkbox" value="1" id="symptom1"
+           name="symptoms[]">
+    <label class="form-check-label" for="symptom1">
+      Fever
+    </label>
+  </div>
+  <div class="form-check">
+    <input class="form-check-input symptom" type="checkbox" value="2" id="symptom2"
+           name="symptoms[]">
+    <label class="form-check-label" for="symptom2">
+      Headache
+    </label>
+  </div>
+  <div class="form-check">
+    <input class="form-check-input symptom" type="checkbox" value="3" id="symptom3"
+           name="symptoms[]">
+    <label class="form-check-label" for="symptom3">
+      Cough
+    </label>
+  </div>
+  <div class="form-check">
+    <input class="form-check-input symptom" type="checkbox" value="4" id="symptom4"
+           name="symptoms[]">
+    <label class="form-check-label" for="symptom4">
+      Fatigue
+    </label>
+  </div>
+  <button id="submit" type="submit" class="btn btn-primary">Submit</button>
+</form>
+<button id="getdata" class="btn btn-primary">Get Data</button>
+<script>
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').then(function(registration) {
+        // Registration was successful
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        // registration failed :(
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+
+  if (!localStorage.getItem('assessment')) {
+    localStorage.setItem('assessment', JSON.stringify([]))
+  }
+
+  $('#submit').click((evt) => {
+    evt.preventDefault()
+    let data = $('#assessment').serializeArray().filter(e => e.name !== 'symptoms[]')
+    data.push({name: 'symptoms', value: $.map($('.symptom:checkbox:checked'), (e) => +e.value)})
+    if (window.navigator.onLine) {
+      let requestStatus = 'in-progress'
+      $.post('/api/assess', data, (resp) => {
+        console.log(resp)
+        if (resp.status && resp.status === 'OK') {
+          $('#msg').removeClass('alert-danger').addClass('alert-primary')
+          $('#msg').html('Report saved')
+          $(':input', '#assessment')
+            .not(':button, :submit, :reset, :hidden')
+            .val('')
+            .prop('checked', false)
+            .prop('selected', false);
+          requestStatus = "succeeded"
+        } else {
+          $('#msg').removeClass('alert-primary').addClass('alert-danger')
+          $('#msg').html('An error occurred: ' + resp.status)
+        }
+      })
+      setTimeout(() => {
+        if (requestStatus === 'in-progress') {
+          requestStatus = 'failed'
+          saveLocally(data)
+        }
+      }, 2000)
+    } else {
+      saveLocally(data)
+    }
+  })
+  function saveLocally(data) {
+    console.log('offline, storing locally')
+    let saved = JSON.parse(localStorage.getItem('assessment'));
+    saved.push(data)
+    localStorage.setItem('assessment', JSON.stringify(saved))
+    $('#msg').show();
+    $('#msg').removeClass('alert-danger').addClass('alert-primary')
+    $('#msg').html('Saved locally')
+  }
+
+  $('#getdata').click((evt) => {
+      $.get('/somedata', resp => {
+        console.log(resp)
+      })
+  })
+</script>
